@@ -34,6 +34,10 @@ function createCityOption(location: LocationSearchResult, badge?: string): CityO
   }
 }
 
+function createHotCityOption(location: LocationSearchResult): CityOption {
+  return createCityOption(location, HOT_CITY_BADGE)
+}
+
 const HOT_CITY_OPTIONS = [
   {
     name: '成都',
@@ -99,7 +103,7 @@ const HOT_CITY_OPTIONS = [
     longitude: 108.9398,
     timezone: 'Asia/Shanghai',
   },
-].map((location) => createCityOption(location, HOT_CITY_BADGE))
+].map(createHotCityOption)
 
 const city = shallowRef('成都')
 const selectedLocation = shallowRef<LocationSearchResult | null>(HOT_CITY_OPTIONS[0].location)
@@ -216,7 +220,7 @@ const enhancedMetrics = computed(() => {
     if (delta > 0) {
       return {
         ...metric,
-        trendDirection: 'up',
+        trendDirection: 'up' as const,
         trendBadge: resolveTrendBadge(delta),
         trendSummary: `较上一时段上升 ${delta} ${resolveDisplayUnit(metric)}`.trim(),
         insight: resolveMetricInsight(metric, delta),
@@ -226,7 +230,7 @@ const enhancedMetrics = computed(() => {
     if (delta < 0) {
       return {
         ...metric,
-        trendDirection: 'down',
+        trendDirection: 'down' as const,
         trendBadge: resolveTrendBadge(delta),
         trendSummary: `较上一时段下降 ${Math.abs(delta)} ${resolveDisplayUnit(metric)}`.trim(),
         insight: resolveMetricInsight(metric, delta),
@@ -235,7 +239,7 @@ const enhancedMetrics = computed(() => {
 
     return {
       ...metric,
-      trendDirection: 'flat',
+      trendDirection: 'flat' as const,
       trendBadge: resolveTrendBadge(delta),
       trendSummary: '较上一时段持平',
       insight: resolveMetricInsight(metric, delta),
@@ -275,7 +279,7 @@ async function handleCitySearch(query: string) {
       return
     }
 
-    cityOptions.value = results.map(createCityOption)
+    cityOptions.value = results.map((location) => createCityOption(location))
     citySearchStatus.value = results.length > 0 ? 'idle' : 'empty'
   } catch {
     if (requestId !== citySearchRequestId) {

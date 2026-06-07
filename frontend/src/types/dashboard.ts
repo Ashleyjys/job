@@ -90,7 +90,7 @@ export interface DashboardQueryFormValues {
   forecastDays: number
   aqForecastDays: number
   enableAnomalyDetection: boolean
-  pm10Weight: number | null
+  pm10Weight?: number | null
   selectedLocation?: LocationSearchResult | null
 }
 
