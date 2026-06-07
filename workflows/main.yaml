@@ -1,0 +1,100 @@
+id: main
+name: air-quality-weather-dashboard
+version: 1
+
+inputs:
+  city:
+    type: string
+    required: false
+  location:
+    type: object
+    required: false
+  options:
+    type: object
+    required: false
+  riskRules:
+    type: object
+    required: false
+
+config:
+  enableAnomalyDetection: true
+  forecastDays: 7
+  aqForecastDays: 5
+  upstreamTimeoutMs:
+    weather: 5000
+    airQuality: 5000
+  analysisTimeoutMs: 2000
+  thresholds:
+    mediumRisk: 40
+    highRisk: 70
+
+steps:
+  - id: validate_input
+    type: validation
+    onError: fail
+
+  - id: resolve_location
+    type: conditional
+    when: location == null
+    action: geocoding.searchCity
+    onError: fail
+
+  - id: fetch_weather
+    type: http
+    mode: parallel
+    action: weather.fetchForecast
+    timeoutMs: 5000
+    retry:
+      maxAttempts: 3
+      backoffMs: [300, 600]
+    onError: mark_degraded
+
+  - id: fetch_air_quality
+    type: http
+    mode: parallel
+    action: airQuality.fetchForecast
+    timeoutMs: 5000
+    retry:
+      maxAttempts: 3
+      backoffMs: [300, 600]
+    onError: mark_degraded
+
+  - id: normalize_weather
+    type: transform
+    dependsOn: [fetch_weather]
+    action: weather.normalize
+
+  - id: normalize_air_quality
+    type: transform
+    dependsOn: [fetch_air_quality]
+    action: airQuality.normalize
+
+  - id: merge_sources
+    type: transform
+    dependsOn: [normalize_weather, normalize_air_quality]
+    action: dashboard.mergeNormalizedData
+
+  - id: score_risk
+    type: http
+    dependsOn: [merge_sources]
+    action: analysis.scoreRisk
+    timeoutMs: 2000
+    onError: mark_degraded
+
+  - id: detect_anomaly
+    type: conditional_http
+    dependsOn: [merge_sources]
+    when: config.enableAnomalyDetection == true
+    action: analysis.detectAnomaly
+    timeoutMs: 2000
+    onError: mark_degraded
+
+  - id: build_view_model
+    type: transform
+    dependsOn: [score_risk, detect_anomaly]
+    action: dashboard.buildViewModel
+
+  - id: complete
+    type: terminal
+    dependsOn: [build_view_model]
+    result: success

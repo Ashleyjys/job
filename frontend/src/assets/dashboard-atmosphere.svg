@@ -1,0 +1,65 @@
+<svg width="1600" height="1200" viewBox="0 0 1600 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="1200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8F7FF"/>
+      <stop offset="0.52" stop-color="#F7FCFF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1260 170) rotate(90) scale(260 260)">
+      <stop stop-color="#FFF6CF"/>
+      <stop offset="0.58" stop-color="#FFF6CF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFF6CF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="airGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 990) rotate(90) scale(280 320)">
+      <stop stop-color="#D9F7EA"/>
+      <stop offset="0.6" stop-color="#D9F7EA" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#D9F7EA" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blurLarge" x="-120" y="-120" width="1840" height="1440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="32"/>
+    </filter>
+    <filter id="blurSoft" x="-120" y="-120" width="1840" height="1440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#sky)"/>
+  <circle cx="1260" cy="170" r="260" fill="url(#sunGlow)"/>
+  <ellipse cx="260" cy="990" rx="320" ry="280" fill="url(#airGlow)"/>
+
+  <g opacity="0.88" filter="url(#blurLarge)">
+    <ellipse cx="300" cy="214" rx="214" ry="82" fill="white"/>
+    <ellipse cx="474" cy="220" rx="166" ry="68" fill="white"/>
+    <ellipse cx="1158" cy="294" rx="236" ry="88" fill="white"/>
+    <ellipse cx="1350" cy="302" rx="188" ry="72" fill="white"/>
+  </g>
+
+  <g opacity="0.9" filter="url(#blurSoft)">
+    <ellipse cx="976" cy="172" rx="142" ry="48" fill="#FDFEFF"/>
+    <ellipse cx="1110" cy="170" rx="116" ry="38" fill="#FDFEFF"/>
+    <ellipse cx="500" cy="342" rx="150" ry="52" fill="#FDFEFF"/>
+    <ellipse cx="648" cy="338" rx="104" ry="36" fill="#FDFEFF"/>
+  </g>
+
+  <g opacity="0.74">
+    <path d="M92 504C230 458 390 484 516 552C632 614 760 632 904 584C1026 542 1158 518 1296 548C1364 564 1418 592 1492 628" stroke="#9FD9F6" stroke-width="14" stroke-linecap="round"/>
+    <path d="M152 576C298 532 466 560 602 626C722 684 848 700 984 656C1108 616 1234 596 1388 632" stroke="#BDE7F8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M240 650C334 630 440 636 528 676C610 714 708 728 806 708" stroke="#D2EEF8" stroke-width="6" stroke-linecap="round"/>
+    <path d="M860 780C950 726 1050 716 1142 738C1230 760 1310 808 1400 862" stroke="#C2EED8" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.56">
+    <path d="M1296 632C1342 608 1392 608 1434 632" stroke="#9FD8EF" stroke-width="7" stroke-linecap="round"/>
+    <path d="M1240 690C1280 668 1324 668 1360 688" stroke="#9FD8EF" stroke-width="7" stroke-linecap="round"/>
+    <path d="M1188 748C1226 728 1266 728 1300 746" stroke="#9FD8EF" stroke-width="7" stroke-linecap="round"/>
+    <path d="M266 796C300 778 338 778 372 796" stroke="#C2EBDA" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.62">
+    <circle cx="220" cy="700" r="12" fill="#D2F4FF"/>
+    <circle cx="1460" cy="460" r="9" fill="#D8F5EA"/>
+    <circle cx="1280" cy="870" r="10" fill="#D2F4FF"/>
+    <circle cx="420" cy="960" r="8" fill="#D8F5EA"/>
+    <circle cx="1080" cy="620" r="7" fill="#E0F7FF"/>
+  </g>
+</svg>
