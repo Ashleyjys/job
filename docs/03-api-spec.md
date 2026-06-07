@@ -21,6 +21,7 @@
 
 ### 2.3 前端访问接口
 - 看板查询接口：由前端调用，后端编排完成数据获取、分析和视图模型组装
+- 城市搜索接口：供前端搜索候选城市并回填坐标信息
 
 ## 3. 外部数据接口定义
 
@@ -41,9 +42,8 @@
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---:|---|
 | `name` | string | 是 | 城市名或邮编 |
-| `count` | integer | 否 | 返回结果数量，默认 10 |
+| `count` | integer | 否 | 当前项目默认请求 8 条候选结果 |
 | `language` | string | 否 | 返回语言，建议 `zh` 或 `en` |
-| `countryCode` | string | 否 | 限定国家，减少歧义 |
 | `format` | string | 否 | 建议使用 `json` |
 
 **示例请求**
@@ -64,10 +64,10 @@
 - 无需 API Key（非商业场景）
 
 **超时策略**
-- 3 秒
+- 当前实现为 10 秒
 
 **重试策略**
-- 失败后最多重试 1 次，仅对 5xx 或网络超时重试
+- 当前实现不重试，由上层调用方决定是否降级
 
 **错误场景**
 - 搜索词为空或过短
@@ -75,7 +75,8 @@
 - 上游超时或限流
 
 **Mock / Fallback 方案**
-- 使用本地城市列表文件返回常用城市坐标，如北京、上海、广州、深圳。
+- `OpenMeteoClient.search_city()` 当前不提供独立城市列表兜底。
+- 若该步骤发生在看板查询链路中，且 `ENABLE_MOCK_FALLBACK=true`，后端会回退为整页 mock 看板结果，而不是单独回退城市坐标。
 
 ---
 
@@ -133,7 +134,7 @@
 - 5 秒
 
 **重试策略**
-- 最多重试 2 次，指数退避 300ms / 600ms
+- 当前实现不重试
 
 **错误场景**
 - 参数非法
@@ -142,7 +143,8 @@
 - 网络异常
 
 **Mock / Fallback 方案**
-- 返回本地静态天气样本 JSON，用于演示页面与测试工作流。
+- 当前天气客户端自身不直接返回局部样本。
+- 在看板查询链路中，若天气或空气质量任一上游请求失败，且 `ENABLE_MOCK_FALLBACK=true`，后端会回退为整页 mock 看板结果。
 
 ---
 
@@ -171,11 +173,11 @@
 | `domains` | string | 否 | 默认 `auto` |
 
 **建议变量**
-- `current`：`us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone`
-- `hourly`：`us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone`
+- `current`：`us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone`
+- `hourly`：`us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone`
 
 **示例请求**
-`GET /v1/air-quality?latitude=39.90&longitude=116.40&current=us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone&hourly=us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto&forecast_days=5&domains=auto`
+`GET /v1/air-quality?latitude=39.90&longitude=116.40&current=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone&hourly=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone&timezone=auto&forecast_days=5&domains=auto`
 
 **关键响应字段**
 | 字段 | 类型 | 说明 |
@@ -198,7 +200,7 @@
 - 5 秒
 
 **重试策略**
-- 最多重试 2 次，指数退避 300ms / 600ms
+- 当前实现不重试
 
 **错误场景**
 - 参数非法
@@ -207,7 +209,8 @@
 - 返回时间序列长度不一致
 
 **Mock / Fallback 方案**
-- 使用本地 AQI 样本 JSON 兜底，并返回 `sourceStatus=degraded`。
+- 当前空气质量客户端自身不直接返回局部样本。
+- 在看板查询链路中，若天气或空气质量任一上游请求失败，且 `ENABLE_MOCK_FALLBACK=true`，后端会回退为整页 mock 看板结果，并返回 `sourceStatus=degraded`。
 
 ## 4. 内部算法接口定义
 
@@ -375,24 +378,60 @@
 - `422`：请求体校验失败
 - `500`：后端编排失败
 
-## 6. 统一错误响应规范
+---
+
+### 5.2 城市搜索接口
+**用途**
+- 为前端搜索框提供城市候选项，返回标准化地点信息列表。
+
+**URL**
+- `GET /api/v1/locations/search`
+
+**Method**
+- `GET`
+
+**查询参数**
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---:|---|
+| `q` | string | 是 | 城市关键词 |
+| `count` | integer | 否 | 最大候选数量，默认 `8`，上限 `10` |
+
+**示例请求**
+`GET /api/v1/locations/search?q=成都&count=8`
+
+**响应体**
 ```json
-{
-  "code": "UPSTREAM_TIMEOUT",
-  "message": "天气服务请求超时",
-  "traceId": "9db69e11c5d84d9a",
-  "details": {
-    "upstream": "weather-api",
-    "retryable": true
+[
+  {
+    "name": "成都",
+    "country": "中国",
+    "admin1": "四川",
+    "latitude": 30.5728,
+    "longitude": 104.0668,
+    "timezone": "Asia/Shanghai"
   }
-}
+]
 ```
 
+**状态码**
+- `200`：成功
+- `422`：查询参数校验失败
+- `502`：地理编码上游不可用
+
+## 6. 当前错误响应行为
+- `POST /api/v1/dashboard/query`
+  - 成功时返回 `DashboardViewModel`
+  - 当地理编码或上游数据请求失败且 `ENABLE_MOCK_FALLBACK=true` 时，直接返回降级后的 mock 看板结果
+  - 当前未实现统一的企业级错误信封结构
+- `GET /api/v1/locations/search`
+  - 上游不可用时返回 `502`，错误体为 FastAPI 默认结构，`detail` 为 `"Location search upstream unavailable."`
+- 通用请求体校验失败时，使用 FastAPI 默认 `422` 响应结构
+
 ## 7. 降级策略
-- 地理编码失败：提示用户重新选择城市或改用推荐城市列表
-- 天气失败、AQI 成功：返回 AQI 卡片、风险结果按降级模式生成
-- AQI 失败、天气成功：仅展示天气数据，风险模块标记为“数据不足”
+- 地理编码失败：若 `ENABLE_MOCK_FALLBACK=true`，返回整页 mock 看板；否则返回错误
+- 天气或 AQI 任一上游失败：若 `ENABLE_MOCK_FALLBACK=true`，返回整页 mock 看板；当前不提供“天气成功 / AQI 失败”的局部展示模式
 - 算法服务失败：对风险评分与异常检测统一回退到 `backend` 本地规则，`analysis` 状态标记为 `degraded`，不影响天气与 AQI 数据展示
+- 异常检测关闭：当前仍会构造异常检测请求或本地检测输入，但通过 `enableDetection=false` 让检测结果返回“无异常”
 
 ## 8. 接口版本策略
 - 前缀统一使用 `/api/v1`

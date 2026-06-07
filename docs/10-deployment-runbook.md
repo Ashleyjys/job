@@ -64,8 +64,8 @@ VITE_API_BASE_URL=http://localhost:8000
 1. `GET /health` 返回 `{ "status": "ok" }`
 2. `POST /api/v1/dashboard/query` 返回统一的看板视图模型
 3. `POST http://localhost:8100/score-risk` 与 `POST http://localhost:8100/detect-anomaly` 可正常返回
-4. 前端页面可以展示城市、指标卡、风险面板、系统状态与未来天气窗口
-5. 请求中的 `forecastDays` 与 `enableAnomalyDetection` 会影响接口返回结果
+4. 前端页面可以展示城市、指标卡、风险面板、系统状态与未来天气预测窗口
+5. 请求体 `options.forecastDays`、`options.aqForecastDays` 与 `options.enableAnomalyDetection` 会影响接口返回结果，`riskRules.pm10Weight` 会影响风险评分参数
 6. 默认情况下后端会调用 Open-Meteo 上游接口与独立算法服务；若上游失败且 `ENABLE_MOCK_FALLBACK=true`，则回退到本地 mock 数据；若算法服务失败，则回退到后端本地规则
 
 ## 6. 测试命令
@@ -86,6 +86,19 @@ cd backend
 cd frontend
 npm run test
 ```
+
+### 6.4 当前验证结论
+- 后端测试可在当前环境完成，最近一次验证结果为通过。
+- 前端源码可在当前环境完成静态校验，可执行：
+
+```powershell
+cd frontend
+node .\node_modules\typescript\bin\tsc --noEmit
+node .\node_modules\vue-tsc\bin\vue-tsc.js --noEmit
+```
+
+- 前端 `npm run test` 与 `npm run build` 当前已经可以在本环境执行通过。
+- 如后续在其他机器再次遇到 `spawn EPERM`，优先按环境问题排查，而不是直接判定为业务代码问题。
 
 ## 7. 常见问题
 ### 7.1 fastapi 未安装
@@ -118,3 +131,12 @@ npm run test
 2. 前端是否通过 `npm run dev` 启动，且使用了 `frontend/vite.config.ts` 中的代理配置
 3. 如果配置了 `VITE_API_BASE_URL`，确认该值是否正确
 4. 如果前端不走代理而是直连后端，确认后端 `CORS_ALLOW_ORIGINS` 是否包含当前前端地址
+
+### 7.6 `npm run test` / `npm run build` 报 `spawn EPERM`
+说明：
+- 这通常不是本项目业务代码本身报错，而是当前运行环境禁止 Node 创建子进程。
+- Vite 与 Vitest 启动时依赖 `esbuild` 等子进程，因此会直接失败。
+
+建议：
+- 先执行 TypeScript 与 Vue 类型检查，确认源码层面没有明显错误。
+- 更换到允许 Node `spawn` 的本地终端、开发机或 CI 环境，再执行 `npm run test` 与 `npm run build` 做最终验收。
